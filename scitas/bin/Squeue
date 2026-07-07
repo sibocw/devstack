@@ -1,0 +1,3 @@
+#!/usr/bin/bash
+
+exec squeue -u "$USER" -o "%.10i %.48j %.4D %.5C %.11m %.6t %.12r %.20S" -S S

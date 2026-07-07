@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+#
+# Cancel all running jobs from me.
+
+squeue -u "$USER" -o "%.10i %.48j %.6t" -S S
+
+read -r -p "Cancel all running jobs above? [Y/y] " ans && [[ $ans == [Yy] ]] || exit 1
+
+for jobid in $(squeue -u "$USER" -o "%.10i" -S S --noheader)
+do
+    scancel "$jobid"
+done

@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+set -e
+
+# Check for prerequisites
+if ! command -v pdftoppm &> /dev/null; then
+    echo "pdftoppm is required but it is not installed or not found in \$PATH."
+    exit 1
+fi
+
+# Parse command line arguments
+# Set default values
+ai_folder="./ai"
+pdf_folder="./pdf"
+png_folder="./png"
+png_dpi=300
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -ai|--ai-folder) ai_folder="$2"; shift 2 ;;
+        -pdf|--pdf-folder) pdf_folder="$2"; shift 2 ;;
+        -png|--png-folder) png_folder="$2"; shift 2 ;;
+        -dpi|--dpi) png_dpi="$2"; shift 2 ;;
+        -h|--help) 
+            echo "Convert Illustrator (.ai) files to PDF and PNG formats."
+            echo "Requires .ai files to be PDF-compatible."
+            echo
+            echo "Usage: $0 [OPTIONS]"
+            echo "Options:"
+            echo "  -ai, --ai-folder DIR    AI files folder (default: ./ai)"
+            echo "  -pdf, --pdf-folder DIR   Output PDF folder (default: ./pdf)"
+            echo "  -png, --png-folder DIR   Output PNG folder (default: ./png)"
+            echo "  -dpi, --dpi NUM          DPI for PDF images (default: 300)"
+            echo "  -h, --help             Show this help message"
+            exit 0
+            ;;
+        *) echo "Unknown option: $1"; exit 1 ;;
+    esac
+done
+
+# Make output directories - NO OVERWRITE to prevent data loss
+for folder in "$pdf_folder" "$png_folder"; do
+    if [ ! -d "$folder" ]; then
+        mkdir "$folder"
+    else
+        echo "Directory '$folder' already exists. Exiting to prevent overwrite."
+        exit 1
+    fi
+done
+
+# Run conversion
+for ai_file in "$ai_folder"/*.ai; do
+    # Check PDF compatibility via magic number
+    if grep -q "%PDF-" "$ai_file"; then
+        echo "Processing $ai_file ..."
+        filename=$(basename "$ai_file")
+        filestem="${filename%.ai}"
+        # .ai -> .pdf
+        cp "$ai_file" "$pdf_folder/${filestem}.pdf"
+        # pdf -> .png
+        pdftoppm -png -r "$png_dpi" \
+            "$pdf_folder/${filestem}.pdf" \
+            "$png_folder/${filestem}"
+        mv "$png_folder/${filestem}-1.png" "$png_folder/${filestem}.png"  # remove page number suffix
+    else
+        echo "WARNING: $ai_file is not PDF-compatible. Skipping this file."
+    fi
+done
+
+echo "All done."

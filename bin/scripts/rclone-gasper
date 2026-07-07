@@ -1,0 +1,32 @@
+#!/usr/bin/env zsh
+#
+# rclone-gaspar is a drop-in replacement of of rclone that prompts the
+# user for their EPFL Gaspar password and exposes it to rclone through an
+# environment variable. This remove the necessity for storing the Gaspar
+# password in the rclone config file, or some other credential file in
+# plain text.
+#
+# An example ~/.config/rclone/rclone.conf file (notice that only the
+# `user` is set, not `pass`):
+#     [sv-nas]
+#     type = smb
+#     host = sv-nas1.rcp.epfl.ch
+#     user = EPFL_USERNAME
+#     domain = INTRANET.EPFL.CH
+#     spn = sv-nas1.rcp.epfl.ch
+#     
+#     [nely-nas]
+#     type = alias
+#     remote = sv-nas:upramdya
+#
+# Example usage:
+#     rclone-gaspar lsf nely-nas:files/
+#
+# To install rclone-gaspar:
+#     1. Copy this file to ~/.local/bin/
+#     2. Add execute permission: chmod ago+x ~/.local/bin/rclone-gaspar
+#     3. If not done already, add ~/.local/bin/ to $PATH in your .zshrc
+
+read -rs "pass?Gaspar password: "
+echo
+RCLONE_SMB_PASS=$(print -r -- "$pass" | rclone obscure -) rclone "$@"

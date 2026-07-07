@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+
+###########################################################
+## This script uses bibtex-tidy for formatting.          ##
+## See https://github.com/FlamingTempura/bibtex-tidy     ##
+## To install it (assuming you have npm installed), run: ##
+##     npm install -g bibtex-tidy                        ##
+###########################################################
+
+
+# Help / input validation
+if [[ "$1" == "-h" || "$1" == "--help" || -z "$1" ]]; then
+    echo "Usage: doi2bib <DOI or URL>"
+    echo "Example: doi2bib 10.1038/s41593-018-0210-5"
+    echo "Example: doi2bib https://doi.org/10.1101/2025.07.31.667571"
+    exit 0
+fi
+
+# Extract DOI and setup temp .bib file
+INPUT=$1
+DOI=${INPUT#*doi.org/}
+TEMP_BIB=$(mktemp /tmp/doi_XXXXXX.bib)
+
+# Fetch the BibTeX via the doi.org API
+curl -sLH "Accept: application/x-bibtex" "https://doi.org/$DOI" > "$TEMP_BIB"
+
+if [ ! -s "$TEMP_BIB" ]; then
+    echo "Error: Could not retrieve BibTeX for DOI $DOI"
+    rm "$TEMP_BIB"
+    exit 1
+fi
+
+# Format with bibtex-tidy (https://github.com/FlamingTempura/bibtex-tidy)
+bibtex-tidy --modify --space=2 --quiet "$TEMP_BIB"
+
+# Make key format consistent (e.g., Lastname2026)
+# (doi.org API returns format like Lastname_2026)
+sed -i '' -E 's/([A-Za-z])_([0-9]{4})/\1\2/g' "$TEMP_BIB"
+
+# Change http://dx.doi.org/ to http://doi.org/
+# (the dx. prefix is outdated)
+sed -i '' 's|http://dx.doi.org/|http://doi.org/|g' "$TEMP_BIB"
+
+# Output to terminal
+cat "$TEMP_BIB"
+
+# Copy to Clipboard
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    cat "$TEMP_BIB" | pbcopy
+    echo "--- Copied to macOS clipboard ---"
+elif command -v xclip >/dev/null; then
+    cat "$TEMP_BIB" | xclip -selection clipboard
+    echo "--- Copied to Linux clipboard (xclip) ---"
+elif command -v wl-copy >/dev/null; then
+    cat "$TEMP_BIB" | wl-copy
+    echo "--- Copied to Wayland clipboard ---"
+fi
+
+# Cleanup
+rm "$TEMP_BIB"

@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# interactive – launch a Sinteract session based on a simple keyword
+#
+# Usage: interactive <l40s|h100|cpu>
+#   l40s →  Sinteract -p l40s   -q debug -t 1:00:00 -m 32G -c 8  -g gpu:1
+#   h100 →  Sinteract -p h100   -q debug -t 1:00:00 -m 64G -c 16 -g gpu:1
+#   cpu  →  Sinteract -p standard -q serial -t 1:00:00 -m 64G -c 36
+
+# -------------------------------------------------------------------------
+
+# Helper: print a short usage message
+usage() {
+    cat <<EOF
+Usage: $(basename "$0") <l40s|h100|cpu>
+
+Run the corresponding Sinteract command:
+  l40s →  Sinteract -p l40s   -q debug -t 1:00:00 -m 32G -c 8  -g gpu:1
+  h100 →  Sinteract -p h100   -q debug -t 1:00:00 -m 64G -c 16 -g gpu:1
+  cpu  →  Sinteract -p standard -q serial -t 1:00:00 -m 64G -c 36
+EOF
+    exit 1
+}
+
+# -------------------------------------------------------------------------
+
+# Ensure exactly one argument is given
+[[ $# -eq 1 ]] || usage
+
+case "$1" in
+    l40s)
+        cmd=(Sinteract -p l40s -q debug -t 1:00:00 -m 32G -c 8 -g gpu:1)
+        ;;
+    h100)
+        cmd=(Sinteract -p h100 -q debug -t 1:00:00 -m 64G -c 16 -g gpu:1)
+        ;;
+    cpu)
+        cmd=(Sinteract -p standard -q serial -t 1:00:00 -m 64G -c 36)
+        ;;
+    *)
+        echo "Error: unknown target '$1'" >&2
+        usage
+        ;;
+esac
+
+# Execute the chosen command
+"${cmd[@]}"

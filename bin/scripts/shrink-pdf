@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+show_help() {
+  cat << EOF
+Usage: $(basename "$0") [OPTIONS] input.pdf
+
+Shrink/compress a PDF using Ghostscript.
+
+OPTIONS:
+  -o, --output FILE     Output PDF file
+                        (default: <input_filename>_reduced.pdf)
+  -q, --quality LEVEL   PDF quality preset
+                        One of: screen, ebook, printer, prepress
+                        in order of increasing quality (default: printer)
+  -h, --help            Show this help message
+
+EXAMPLES:
+  $(basename "$0") paper.pdf
+  $(basename "$0") -q screen paper.pdf
+  $(basename "$0") -q ebook -o paper_small.pdf paper.pdf
+EOF
+}
+
+# Defaults
+quality="printer"
+output_file=""
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -q|--quality)
+      quality="$2"
+      shift 2
+      ;;
+    -o|--output)
+      output_file="$2"
+      shift 2
+      ;;
+    -h|--help)
+      show_help
+      exit 0
+      ;;
+    -*)
+      echo "Unknown option: $1" >&2
+      show_help
+      exit 1
+      ;;
+    *)
+      input_file="$1"
+      shift
+      ;;
+  esac
+done
+
+# Require input file
+: "${input_file:?Missing input PDF file (see --help)}"
+
+# Default output name
+if [[ -z "$output_file" ]]; then
+  output_file="${input_file%.pdf}_reduced.pdf"
+fi
+
+# Run Ghostscript
+gs -sDEVICE=pdfwrite \
+   -dCompatibilityLevel=1.4 \
+   -dPDFSETTINGS=/"$quality" \
+   -dNOPAUSE -dQUIET -dBATCH \
+   -sOutputFile="$output_file" \
+   "$input_file"
+
+echo "Reduced PDF written to: $output_file"

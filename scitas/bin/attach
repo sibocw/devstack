@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Check for the required argument (job ID)
+if [ -z "$1" ]; then
+  echo "Usage: attach <jobid>" >&2 # Output error to stderr
+  exit 1
+fi
+
+# Execute the srun command
+srun --pty --overlap --jobid "$1" bash
