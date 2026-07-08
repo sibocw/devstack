@@ -51,8 +51,8 @@ fi
 
 # ===== History ==============================================================
 export HISTFILE="$HOME/.zsh_history"
-export HISTSIZE=1000
-export SAVEHIST=1
+export SAVEHIST=1000
+export HISTSIZE=$SAVEHIST
 
 # ===== Zsh plugins ==========================================================
 # 1. Source manually (instead of using ohmyzsh) to reduce overhead
