@@ -2,22 +2,29 @@
 # interactive – launch a Sinteract session based on a simple keyword
 #
 # Usage: interactive <l40s|h100|cpu>
-#   l40s →  Sinteract -p l40s   -q debug -t 1:00:00 -m 32G -c 8  -g gpu:1
-#   h100 →  Sinteract -p h100   -q debug -t 1:00:00 -m 64G -c 16 -g gpu:1
-#   cpu  →  Sinteract -p standard -q serial -t 1:00:00 -m 64G -c 36
+
+# -------------------------------------------------------------------------
+
+# Single source of truth for all target commands
+declare -A COMMANDS=(
+    [l40s]="Sinteract -p l40s -q debug -t 1:00:00 -m 32G -c 8 -g gpu:1"
+    [h100]="Sinteract -p h100 -q debug -t 1:00:00 -m 64G -c 16 -g gpu:1"
+    [cpu]="Sinteract -p standard -q serial -t 1:00:00 -m 64G -c 36"
+)
+
+# Preserve a stable display order (bash associative arrays are unordered)
+ORDER=(l40s h100 cpu)
 
 # -------------------------------------------------------------------------
 
 # Helper: print a short usage message
 usage() {
-    cat <<EOF
-Usage: $(basename "$0") <l40s|h100|cpu>
-
-Run the corresponding Sinteract command:
-  l40s →  Sinteract -p l40s   -q debug -t 1:00:00 -m 32G -c 8  -g gpu:1
-  h100 →  Sinteract -p h100   -q debug -t 1:00:00 -m 64G -c 16 -g gpu:1
-  cpu  →  Sinteract -p standard -q serial -t 1:00:00 -m 64G -c 36
-EOF
+    echo "Usage: $(basename "$0") <${ORDER[*]// /|}>"
+    echo
+    echo "Run the corresponding Sinteract command:"
+    for key in "${ORDER[@]}"; do
+        printf '  %-5s →  %s\n' "$key" "${COMMANDS[$key]}"
+    done
     exit 1
 }
 
@@ -26,21 +33,11 @@ EOF
 # Ensure exactly one argument is given
 [[ $# -eq 1 ]] || usage
 
-case "$1" in
-    l40s)
-        cmd=(Sinteract -p l40s -q debug -t 1:00:00 -m 32G -c 8 -g gpu:1)
-        ;;
-    h100)
-        cmd=(Sinteract -p h100 -q debug -t 1:00:00 -m 64G -c 16 -g gpu:1)
-        ;;
-    cpu)
-        cmd=(Sinteract -p standard -q serial -t 1:00:00 -m 64G -c 36)
-        ;;
-    *)
-        echo "Error: unknown target '$1'" >&2
-        usage
-        ;;
-esac
+if [[ -z "${COMMANDS[$1]+set}" ]]; then
+    echo "Error: unknown target '$1'" >&2
+    usage
+fi
 
-# Execute the chosen command
+# Split the stored command string into an array and execute it
+read -ra cmd <<< "${COMMANDS[$1]}"
 "${cmd[@]}"
