@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
+#
+# Shrink/compress a PDF using Ghostscript.
+#
+# Usage: shrinkpdf [OPTIONS] input.pdf
 set -euo pipefail
 
 show_help() {
-  cat << EOF
+    cat << EOF
 Usage: $(basename "$0") [OPTIONS] input.pdf
 
 Shrink/compress a PDF using Ghostscript.
@@ -13,7 +17,7 @@ OPTIONS:
   -q, --quality LEVEL   PDF quality preset
                         One of: screen, ebook, printer, prepress
                         in order of increasing quality (default: printer)
-  -h, --help            Show this help message
+  -h, --help            Show this help message and exit
 
 EXAMPLES:
   $(basename "$0") paper.pdf
@@ -28,37 +32,74 @@ output_file=""
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
-  case "$1" in
-    -q|--quality)
-      quality="$2"
-      shift 2
-      ;;
-    -o|--output)
-      output_file="$2"
-      shift 2
-      ;;
-    -h|--help)
-      show_help
-      exit 0
-      ;;
-    -*)
-      echo "Unknown option: $1" >&2
-      show_help
-      exit 1
-      ;;
-    *)
-      input_file="$1"
-      shift
-      ;;
-  esac
+    case "$1" in
+        -q|--quality)
+            [[ $# -ge 2 ]] || { echo "Error: $1 requires an argument" >&2; exit 1; }
+            quality="$2"
+            shift 2
+            ;;
+        -o|--output)
+            [[ $# -ge 2 ]] || { echo "Error: $1 requires an argument" >&2; exit 1; }
+            output_file="$2"
+            shift 2
+            ;;
+        -h|--help)
+            show_help
+            exit 0
+            ;;
+        -*)
+            echo "Unknown option: $1" >&2
+            show_help
+            exit 1
+            ;;
+        *)
+            if [[ -n "${input_file:-}" ]]; then
+                echo "Error: too many arguments: '$input_file' and '$1'" >&2
+                exit 1
+            fi
+            input_file="$1"
+            shift
+            ;;
+    esac
 done
 
 # Require input file
 : "${input_file:?Missing input PDF file (see --help)}"
 
-# Default output name
+# Validate quality preset
+case "$quality" in
+    screen|ebook|printer|prepress) ;;
+    *)
+        echo "Error: invalid quality '$quality' (must be one of: screen, ebook, printer, prepress)" >&2
+        exit 1
+        ;;
+esac
+
+# Default output name (strip a .pdf suffix case-insensitively)
 if [[ -z "$output_file" ]]; then
-  output_file="${input_file%.pdf}_reduced.pdf"
+    shopt -s nocasematch
+    if [[ "$input_file" == *.pdf ]]; then
+        output_file="${input_file%.*}_reduced.pdf"
+    else
+        output_file="${input_file}_reduced.pdf"
+    fi
+    shopt -u nocasematch
+fi
+
+# Resolve a path to an absolute form without requiring it to exist, so we
+# can detect when input and output refer to the same file.
+resolve_path() {
+    local dir
+    dir=$(cd "$(dirname -- "$1")" 2>/dev/null && pwd -P) || dir=$(dirname -- "$1")
+    printf '%s/%s\n' "$dir" "$(basename -- "$1")"
+}
+
+# Guard against overwriting the input file: Ghostscript opens -sOutputFile
+# for writing before it has finished reading the input, so input == output
+# truncates/corrupts the source.
+if [[ "$(resolve_path "$input_file")" == "$(resolve_path "$output_file")" ]]; then
+    echo "Error: output file must be different from the input file ('$input_file')" >&2
+    exit 1
 fi
 
 # Run Ghostscript

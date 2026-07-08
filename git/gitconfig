@@ -9,3 +9,6 @@
         prompt = false
 [alias]
         vimdiff = difftool
+[user]
+	email = sibo.wang@epfl.ch
+	name = Sibo Wang-Chen

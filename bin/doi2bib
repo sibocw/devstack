@@ -1,19 +1,30 @@
 #!/usr/bin/env bash
+#
+# Fetch, tidy, and print the BibTeX entry for a DOI or DOI URL, then copy
+# it to the clipboard.
+#
+# Uses bibtex-tidy for formatting; see
+# https://github.com/FlamingTempura/bibtex-tidy
+# To install it (assuming npm is installed): npm install -g bibtex-tidy
+#
+# Usage: doi2bib DOI_OR_URL
 
+show_help() {
+    cat << EOF
+Usage: doi2bib <DOI or URL>
 
-###########################################################
-## This script uses bibtex-tidy for formatting.          ##
-## See https://github.com/FlamingTempura/bibtex-tidy     ##
-## To install it (assuming you have npm installed), run: ##
-##     npm install -g bibtex-tidy                        ##
-###########################################################
+Fetch, tidy, and print the BibTeX entry for a DOI (via the doi.org API),
+then copy it to the clipboard.
 
+EXAMPLES:
+  doi2bib 10.1038/s41593-018-0210-5
+  doi2bib https://doi.org/10.1101/2025.07.31.667571
+EOF
+}
 
 # Help / input validation
 if [[ "$1" == "-h" || "$1" == "--help" || -z "$1" ]]; then
-    echo "Usage: doi2bib <DOI or URL>"
-    echo "Example: doi2bib 10.1038/s41593-018-0210-5"
-    echo "Example: doi2bib https://doi.org/10.1101/2025.07.31.667571"
+    show_help
     exit 0
 fi
 
@@ -23,11 +34,12 @@ DOI=${INPUT#*doi.org/}
 TEMP_BIB=$(mktemp /tmp/doi_XXXXXX.bib)
 
 # Fetch the BibTeX via the doi.org API
-curl -sLH "Accept: application/x-bibtex" "https://doi.org/$DOI" > "$TEMP_BIB"
-
-if [ ! -s "$TEMP_BIB" ]; then
+# -f/--fail makes curl exit non-zero (instead of saving an HTML error page)
+# on HTTP error responses, e.g. an unknown DOI.
+if ! curl -sfLH "Accept: application/x-bibtex" "https://doi.org/$DOI" > "$TEMP_BIB" \
+        || [ ! -s "$TEMP_BIB" ]; then
     echo "Error: Could not retrieve BibTeX for DOI $DOI"
-    rm "$TEMP_BIB"
+    rm -f "$TEMP_BIB"
     exit 1
 fi
 

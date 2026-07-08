@@ -1,5 +1,32 @@
 #!/usr/bin/env bash
+#
+# Convert Illustrator (.ai) files to PDF and PNG formats for publication.
+#
+# Requires .ai files to be PDF-compatible. Multi-artboard files are split
+# into one 1-page PDF and one PNG per artboard.
+#
+# Usage: ai2pdfpng [OPTIONS]
+#        ai2pdfpng [OPTIONS] FILE.ai
 set -e
+
+show_help() {
+    cat << EOF
+Usage: $(basename "$0") [OPTIONS]
+       $(basename "$0") [OPTIONS] FILE.ai
+
+Convert Illustrator (.ai) files to PDF and PNG formats.
+Requires .ai files to be PDF-compatible.
+Multi-artboard files are split into one 1-page PDF and one PNG per artboard.
+
+OPTIONS:
+  -ai, --ai-folder DIR|FILE  AI files folder, or a single .ai file
+                             (default: ./ai)
+  -pdf, --pdf-folder DIR     Output PDF folder (default: ./pdf)
+  -png, --png-folder DIR     Output PNG folder (default: ./png)
+  -dpi, --dpi NUM            DPI for PDF images (default: 300)
+  -h, --help                 Show this help message and exit
+EOF
+}
 
 # Check for prerequisites
 for tool in pdftoppm pdfseparate pdfinfo; do
@@ -22,21 +49,7 @@ while [[ $# -gt 0 ]]; do
         -pdf|--pdf-folder) pdf_folder="$2"; shift 2 ;;
         -png|--png-folder) png_folder="$2"; shift 2 ;;
         -dpi|--dpi) png_dpi="$2"; shift 2 ;;
-        -h|--help)
-            echo "Convert Illustrator (.ai) files to PDF and PNG formats."
-            echo "Requires .ai files to be PDF-compatible."
-            echo "Multi-artboard files are split into one 1-page PDF and one PNG per artboard."
-            echo
-            echo "Usage: $0 [OPTIONS]"
-            echo "       $0 [OPTIONS] FILE.ai"
-            echo "Options:"
-            echo "  -ai, --ai-folder DIR|FILE  AI files folder, or a single .ai file (default: ./ai)"
-            echo "  -pdf, --pdf-folder DIR   Output PDF folder (default: ./pdf)"
-            echo "  -png, --png-folder DIR   Output PNG folder (default: ./png)"
-            echo "  -dpi, --dpi NUM          DPI for PDF images (default: 300)"
-            echo "  -h, --help             Show this help message"
-            exit 0
-            ;;
+        -h|--help) show_help; exit 0 ;;
         -*) echo "Unknown option: $1"; exit 1 ;;
         *) ai_folder="$1"; shift ;;
     esac

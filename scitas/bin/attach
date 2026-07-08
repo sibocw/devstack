@@ -1,9 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
+# Attach an interactive shell to a running Slurm job.
+#
+# Usage: attach JOBID
 
 # Check for the required argument (job ID)
 if [ -z "$1" ]; then
-  echo "Usage: attach <jobid>" >&2 # Output error to stderr
-  exit 1
+    echo "Usage: attach JOBID" >&2 # Output error to stderr
+    exit 1
 fi
 
 # Execute the srun command

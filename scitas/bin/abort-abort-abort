@@ -1,12 +1,23 @@
 #!/usr/bin/env bash
 #
-# Cancel all running jobs from me.
+# Cancel all queued and running jobs from me.
 
-squeue -u "$USER" -o "%.10i %.48j %.6t" -S S
+# Query the queue once and reuse the same snapshot for both the display
+# and the cancellation loop below, so a job that appears after the user
+# confirms is never cancelled without having been shown to them.
+queue=$(squeue -u "$USER" -o "%.10i %.48j %.6t" -S S)
 
-read -r -p "Cancel all running jobs above? [Y/y] " ans && [[ $ans == [Yy] ]] || exit 1
+# Only the header line means there are no jobs.
+if [[ $(wc -l <<< "$queue") -le 1 ]]; then
+    echo "No jobs to cancel."
+    exit 0
+fi
 
-for jobid in $(squeue -u "$USER" -o "%.10i" -S S --noheader)
-do
+echo "$queue"
+echo
+
+read -r -p "Cancel all jobs above? [Y/y] " ans && [[ $ans == [Yy] ]] || exit 1
+
+tail -n +2 <<< "$queue" | while read -r jobid _; do
     scancel "$jobid"
 done

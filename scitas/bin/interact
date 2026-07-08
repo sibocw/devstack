@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-# interactive – launch a Sinteract session based on a simple keyword
 #
-# Usage: interactive <l40s|h100|cpu>
-
-# -------------------------------------------------------------------------
+# Launch a Sinteract session based on a simple keyword.
+#
+# Usage: interact <l40s|h100|cpu>
 
 # Single source of truth for all target commands
 declare -A COMMANDS=(
@@ -15,8 +14,6 @@ declare -A COMMANDS=(
 # Preserve a stable display order (bash associative arrays are unordered)
 ORDER=(l40s h100 cpu)
 
-# -------------------------------------------------------------------------
-
 # Helper: print a short usage message
 usage() {
     echo "Usage: $(basename "$0") <${ORDER[*]// /|}>"
@@ -27,8 +24,6 @@ usage() {
     done
     exit 1
 }
-
-# -------------------------------------------------------------------------
 
 # Ensure exactly one argument is given
 [[ $# -eq 1 ]] || usage

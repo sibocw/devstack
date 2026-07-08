@@ -1,3 +1,5 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
+#
+# Print the current user's Slurm queue, sorted by start time.
 
 exec squeue -u "$USER" -o "%.10i %.48j %.4D %.5C %.11m %.6t %.12r %.20S" -S S
