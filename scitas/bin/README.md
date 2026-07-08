@@ -3,7 +3,7 @@
     `abort-abort-abort`
 - Attach interactive shell to currently running job:
     - `attach <jobid>`
-- Launch interactive job
+- Launch short interactive job for testing:
     - `interact cpu` (CPU-only on Jed)
     - `interact l40s` (L40S GPU on Kuma)
     - `interact h100` (H100 GPU on Kuma)
