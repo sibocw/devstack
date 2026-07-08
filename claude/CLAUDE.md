@@ -13,6 +13,7 @@
 3. Unless you're editing a Markdown file, don't use non-ASCII characters in code, comments, or literal strings (exception: mathematical equations if Unicode really makes things clearer). Never use non-ASCII characters in variable names. 
 4. In Markdown files, don't use line breaks within a paragraph.
 5. Write Python docstrings in Markdown, not RST. Therefore, using `single` ticks, not ``double``.
+6. When commenting on a line in Python, if the combined length of the code and the comment exeeds 88, write the comment above the code, not on the same line after it. In otherwords, the formatter should never have to re-format a line just becasue of its comment.
 
 ## Guardrails
 1. If you are on a cluster (you can tell this by the `IS_CLUSTER` env var, which I've set to 1 in `.bashrc` on the cluster), DO NOT run any heavy unit tests, or scripts. You are on a login node where compute is forbidden. If you need to run any compute tests, tell me and I will do it for you in an interactive session. Simple things like IO tests and temporaryfile-exploration scripts are allowed.
