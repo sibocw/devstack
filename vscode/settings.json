@@ -1,0 +1,79 @@
+{
+    "editor.rulers": [
+        80,
+        88
+    ],
+    "terminal.integrated.inheritEnv": false,
+    "jupyter.askForKernelRestart": false,
+    "editor.minimap.enabled": false,
+    "editor.fontSize": 13,
+    "terminal.integrated.fontSize": 12,
+    "editor.suggestSelection": "first",
+    "vsintellicode.modify.editor.suggestSelection": "automaticallyOverrodeDefaultValue",
+    "vim.useSystemClipboard": true,
+    "diffEditor.ignoreTrimWhitespace": false,
+    "notebook.output.textLineLimit": 1000,
+    "jupyter.widgetScriptSources": [
+        "jsdelivr.com",
+        "unpkg.com"
+    ],
+    "editor.inlineSuggest.enabled": true,
+    "[python]": {
+        "editor.formatOnType": true,
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "diffEditor.ignoreTrimWhitespace": false
+    },
+    "python.formatting.provider": "none",
+    "github.copilot.editor.enableAutoCompletions": true,
+    "cSpell.userWords": [
+        "arange",
+        "arctan",
+        "astype",
+        "cumsum",
+        "dtype",
+        "figsize",
+        "flygym",
+        "idiothetic",
+        "joblib",
+        "linalg",
+        "mechanosensory",
+        "melanogaster",
+        "ndarray",
+        "odometry",
+        "Sibo",
+        "timestep",
+        "trange",
+        "NeuroMechFly"
+    ],
+    "interactiveWindow.executeWithShiftEnter": true,
+    "git.openRepositoryInParentFolders": "always",
+    "workbench.iconTheme": "Monokai Pro Icons",
+    "terminal.integrated.commandsToSkipShell": [
+        "language-julia.interrupt"
+    ],
+    "julia.symbolCacheDownload": true,
+    "[julia]": {
+        "editor.defaultFormatter": "julialang.language-julia"
+    },
+    "debugpy.debugJustMyCode": false,
+    "[cpp]": {
+        "editor.defaultFormatter": "ms-vscode.cpptools"
+    },
+    "window.customTitleBarVisibility": "auto",
+    "julia.enableTelemetry": false,
+    "github.copilot.nextEditSuggestions.enabled": true,
+    "terminal.integrated.tabs.enabled": false,
+    "gitlens.ai.model": "vscode",
+    "gitlens.ai.vscode.model": "copilot:gpt-4.1",
+    "black-formatter.path": [
+        "black"
+    ],
+    "chat.viewSessions.orientation": "stacked",
+    "claudeCode.preferredLocation": "panel",
+    "workbench.browser.openLocalhostLinks": false,
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true
+    },
+    "editor.defaultFormatter": "charliermarsh.ruff",
+}
