@@ -36,11 +36,14 @@ bibtex-tidy --modify --space=2 --quiet "$TEMP_BIB"
 
 # Make key format consistent (e.g., Lastname2026)
 # (doi.org API returns format like Lastname_2026)
-sed -i '' -E 's/([A-Za-z])_([0-9]{4})/\1\2/g' "$TEMP_BIB"
+# Note: the backup suffix must be attached to -i (no space) to work with
+# both BSD sed (macOS) and GNU sed (Linux).
+sed -i.bak -E 's/([A-Za-z])_([0-9]{4})/\1\2/g' "$TEMP_BIB"
 
 # Change http://dx.doi.org/ to http://doi.org/
 # (the dx. prefix is outdated)
-sed -i '' 's|http://dx.doi.org/|http://doi.org/|g' "$TEMP_BIB"
+sed -i.bak 's|http://dx.doi.org/|http://doi.org/|g' "$TEMP_BIB"
+rm -f "$TEMP_BIB.bak"
 
 # Output to terminal
 cat "$TEMP_BIB"
