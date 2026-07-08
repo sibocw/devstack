@@ -97,4 +97,8 @@ set background=dark
 colorscheme desert
 
 " Sync with system clipboard
-set clipboard=unnamedplus
+if has('unnamedplus')
+    set clipboard=unnamedplus
+else
+    set clipboard=unnamed
+endif
