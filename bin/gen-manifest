@@ -1,0 +1,159 @@
+#!/usr/bin/env python3
+"""
+gen-manifest – create a CSV manifest (path,size,mtime) for a directory or a tar archive.
+
+Usage
+-----
+    python lsfiles.py <path>
+
+<path> can be
+    * a directory,
+    * a *.tar* file (plain, .gz, .bz2, .xz, …).
+
+The script writes   <path>.manifest.csv   containing:
+
+    full_path,size_bytes,mtime_epoch
+
+*Only regular files* are listed; directories are ignored.
+Paths are relative to the supplied directory or, for a tar archive,
+the exact name stored inside the archive (no leading “./”).
+
+If the destination CSV already exists the script aborts with exit‑code 1.
+Files that cannot be processed (e.g. permission errors) are recorded in
+`<path>.manifest.failed.csv` together with a short error description.
+"""
+
+import argparse
+import csv
+import os
+import sys
+import tarfile
+from pathlib import Path
+from time import time
+
+
+def manifest_from_dir(root: Path,
+                     ok_writer: csv.writer,
+                     fail_writer: csv.writer) -> None:
+    """
+    Walk a directory tree and write (relative_path, size, mtime) for each
+    regular file to ``ok_writer``.  Errors (e.g. PermissionError), including
+    subdirectories that cannot be listed at all, are written to
+    ``fail_writer`` as (relative_path, error_message).
+    """
+    def on_walk_error(exc: OSError) -> None:
+        # os.walk() calls this instead of raising when a directory can't be
+        # listed (e.g. permission denied); pathlib.rglob() silently drops
+        # such directories instead, which would lose entries with no record.
+        bad_path = Path(exc.filename) if exc.filename else root
+        try:
+            rel = bad_path.relative_to(root).as_posix()
+        except ValueError:
+            rel = str(bad_path)
+        fail_writer.writerow([rel, str(exc)])
+
+    for dirpath, _dirnames, filenames in os.walk(root, onerror=on_walk_error):
+        for name in filenames:
+            entry = Path(dirpath) / name
+            rel_path = entry.relative_to(root).as_posix()
+            try:
+                if not entry.is_file():
+                    continue
+                stat = entry.stat()
+                ok_writer.writerow([rel_path, stat.st_size, int(stat.st_mtime)])
+            except OSError as exc:          # PermissionError, FileNotFoundError, …
+                fail_writer.writerow([rel_path, str(exc)])
+
+
+def manifest_from_tar(tar_path: Path,
+                     ok_writer: csv.writer,
+                     fail_writer: csv.writer) -> None:
+    """
+    Iterate over a tar (or tar.gz, …) archive and write
+    (member.name, size, mtime) for each regular file to ``ok_writer``.
+    If the archive cannot be opened, a single row is written to
+    ``fail_writer``.
+    """
+    try:
+        # "r:*" lets tarfile guess the compression format
+        with tarfile.open(tar_path, "r:*") as tf:
+            for member in tf.getmembers():
+                if member.isfile():
+                    ok_writer.writerow([member.name, member.size, int(member.mtime)])
+    except (tarfile.TarError, OSError) as exc:
+        # The whole archive could not be processed – record the failure.
+        fail_writer.writerow([tar_path.name, str(exc)])
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Create a CSV manifest (path,size,mtime) for a directory "
+                    "or a tar archive."
+    )
+    parser.add_argument(
+        "target",
+        type=Path,
+        help="Path to a directory, .tar file or .tar.gz file",
+    )
+    args = parser.parse_args()
+    target = args.target.resolve()
+
+    if not target.exists():
+        print(f"Error: '{target}' does not exist.", file=sys.stderr)
+        return 1
+
+    # -----------------------------------------------------------------
+    #   Determine the kind of <target> BEFORE touching any output file, so
+    #   an invalid target never leaves stray (empty) manifest files behind.
+    # -----------------------------------------------------------------
+    if target.is_dir():
+        is_dir_target = True
+    elif tarfile.is_tarfile(target):
+        is_dir_target = False
+    else:
+        print(
+            f"Error: '{target}' is neither a directory nor a recognizable tar archive.",
+            file=sys.stderr,
+        )
+        return 1
+
+    # -----------------------------------------------------------------
+    #   Prepare output files
+    # -----------------------------------------------------------------
+    csv_path   = Path(str(target) + ".manifest.csv")
+    fail_path  = Path(str(target) + ".manifest.failed.csv")
+
+    if csv_path.exists():
+        print(
+            f"Error: output file '{csv_path}' already exists – refusing to overwrite.",
+            file=sys.stderr,
+        )
+        return 1
+
+    start = time()
+
+    # Open the two CSV files (the *failed* file will be created even if empty)
+    with csv_path.open("w", newline="") as ok_f, \
+         fail_path.open("w", newline="") as fail_f:
+
+        ok_writer   = csv.writer(ok_f)
+        fail_writer = csv.writer(fail_f)
+        ok_writer.writerow(["full_path", "size_bytes", "mtime_epoch"])
+        fail_writer.writerow(["path", "error"])
+
+        # -----------------------------------------------------------------
+        #   Dispatch according to the type of <target>
+        # -----------------------------------------------------------------
+        if is_dir_target:
+            manifest_from_dir(target, ok_writer, fail_writer)
+        else:
+            manifest_from_tar(target, ok_writer, fail_writer)
+
+    elapsed = time() - start
+    print(f"Manifest written to '{csv_path}' in {elapsed:.2f} s")
+    print(f"Failed entries (if any) written to '{fail_path}'")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
