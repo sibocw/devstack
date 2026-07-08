@@ -2,10 +2,12 @@
 set -e
 
 # Check for prerequisites
-if ! command -v pdftoppm &> /dev/null; then
-    echo "pdftoppm is required but it is not installed or not found in \$PATH."
-    exit 1
-fi
+for tool in pdftoppm pdfseparate pdfinfo; do
+    if ! command -v "$tool" &> /dev/null; then
+        echo "$tool is required but it is not installed or not found in \$PATH."
+        exit 1
+    fi
+done
 
 # Parse command line arguments
 # Set default values
@@ -20,20 +22,23 @@ while [[ $# -gt 0 ]]; do
         -pdf|--pdf-folder) pdf_folder="$2"; shift 2 ;;
         -png|--png-folder) png_folder="$2"; shift 2 ;;
         -dpi|--dpi) png_dpi="$2"; shift 2 ;;
-        -h|--help) 
+        -h|--help)
             echo "Convert Illustrator (.ai) files to PDF and PNG formats."
             echo "Requires .ai files to be PDF-compatible."
+            echo "Multi-artboard files are split into one 1-page PDF and one PNG per artboard."
             echo
             echo "Usage: $0 [OPTIONS]"
+            echo "       $0 [OPTIONS] FILE.ai"
             echo "Options:"
-            echo "  -ai, --ai-folder DIR    AI files folder (default: ./ai)"
+            echo "  -ai, --ai-folder DIR|FILE  AI files folder, or a single .ai file (default: ./ai)"
             echo "  -pdf, --pdf-folder DIR   Output PDF folder (default: ./pdf)"
             echo "  -png, --png-folder DIR   Output PNG folder (default: ./png)"
             echo "  -dpi, --dpi NUM          DPI for PDF images (default: 300)"
             echo "  -h, --help             Show this help message"
             exit 0
             ;;
-        *) echo "Unknown option: $1"; exit 1 ;;
+        -*) echo "Unknown option: $1"; exit 1 ;;
+        *) ai_folder="$1"; shift ;;
     esac
 done
 
@@ -48,19 +53,37 @@ for folder in "$pdf_folder" "$png_folder"; do
 done
 
 # Run conversion
-for ai_file in "$ai_folder"/*.ai; do
+if [ -f "$ai_folder" ]; then
+    ai_files=("$ai_folder")
+else
+    ai_files=("$ai_folder"/*.ai)
+fi
+
+for ai_file in "${ai_files[@]}"; do
     # Check PDF compatibility via magic number
     if grep -q "%PDF-" "$ai_file"; then
         echo "Processing $ai_file ..."
         filename=$(basename "$ai_file")
         filestem="${filename%.ai}"
-        # .ai -> .pdf
-        cp "$ai_file" "$pdf_folder/${filestem}.pdf"
-        # pdf -> .png
-        pdftoppm -png -r "$png_dpi" \
-            "$pdf_folder/${filestem}.pdf" \
-            "$png_folder/${filestem}"
-        mv "$png_folder/${filestem}-1.png" "$png_folder/${filestem}.png"  # remove page number suffix
+        npages=$(pdfinfo "$ai_file" | awk '/^Pages:/ {print $2}')
+
+        if [ "$npages" -eq 1 ]; then
+            # Single artboard: one PDF, one PNG, no page-number suffix.
+            cp "$ai_file" "$pdf_folder/${filestem}.pdf"
+            pdftoppm -singlefile -png -r "$png_dpi" \
+                "$pdf_folder/${filestem}.pdf" \
+                "$png_folder/${filestem}"
+        else
+            # Multiple artboards: split into one 1-page PDF per artboard,
+            # then render each to its own PNG.
+            pdfseparate "$ai_file" "$pdf_folder/${filestem}-%d.pdf"
+            for page_pdf in "$pdf_folder/${filestem}"-*.pdf; do
+                page_stem=$(basename "$page_pdf" .pdf)
+                pdftoppm -singlefile -png -r "$png_dpi" \
+                    "$page_pdf" \
+                    "$png_folder/${page_stem}"
+            done
+        fi
     else
         echo "WARNING: $ai_file is not PDF-compatible. Skipping this file."
     fi
