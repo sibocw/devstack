@@ -1,1 +1,1 @@
-Rename `vimrc` to `$HOME/.vimrc`.
+Copy or symlink `vimrc` to `$HOME/.vimrc`.

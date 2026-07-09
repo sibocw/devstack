@@ -1,1 +1,1 @@
-Rename `CLAUDE.md` to `$HOME/.claude/CLAUDE.md`.
+Copy or symlink `CLAUDE.md` to `$HOME/.claude/CLAUDE.md`.

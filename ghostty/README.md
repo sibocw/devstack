@@ -1,1 +1,1 @@
-Rename `config.ghostty` to `$HOME/.config/ghostty/config.ghostty`.
+Copy or symlink `config.ghostty` to `$HOME/.config/ghostty/config.ghostty`.

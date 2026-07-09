@@ -1,1 +1,1 @@
-Rename `gitconfig` to `$HOME/.gitconfig`.
+Copy or symlink `gitconfig` to `$HOME/.gitconfig`.

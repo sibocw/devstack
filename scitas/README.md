@@ -3,7 +3,7 @@
 
 
 ## Using Ghostty on SSH client side
-To use Ghostty on the ssh client side, and make things like ctrl-left work, keybindings must be setmanually. To do this, first follow the PREREQUISITE in `keybindings.zsh` docs. Then, rename `keybindings.zsh` to `$HOME/.zsh/keybindings.zsh`. To make execution faster, compile it by running `zcompile $HOME/.zsh/keybindings.zsh`. Then source it from `.zshrc` (already in the script provided below).
+To use Ghostty on the ssh client side, and make things like ctrl-left work, keybindings must be setmanually. To do this, first follow the PREREQUISITE in `keybindings.zsh` docs. Then, copy or symlink `keybindings.zsh` to `$HOME/.zsh/keybindings.zsh`. To make execution faster, compile it by running `zcompile $HOME/.zsh/keybindings.zsh`. Then source it from `.zshrc` (already in the script provided below).
 
 ## `bashrc` and `zshrc` profiles
 First, diff `bashrc` with the system-provided `$HOME/.bashrc` to see if there has been any addition by system admins since this `bashrc` is written. Then, rename `bashrc` here to `$HOME/.bashrc`. All user customization should go into `.bashrc` except ZSH-specific ones.
